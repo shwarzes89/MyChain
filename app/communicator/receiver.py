@@ -1,7 +1,7 @@
 import traceback
 from socket import *
 
-from app import log
+from app import log, key
 from app import transaction
 from app.block import create_block, Block
 from app.transaction import Transaction
@@ -49,22 +49,15 @@ def start(thread_name, ip_address, port):
 				if data_json_obj['type'] == 'T':
 					log.write("Receiving a transaction")
 
-					# dict 데이터로부터 transaction 객체 생성
-					tx = Transaction().from_json(data_json_obj)
+					verify_msg = data_json_obj['time_stamp'] + data_json_obj['message']
 
-					# transaction 추가
-					transaction.add_transaction(tx)
-
-					# TODO release comment when pki is implemented
-					# verify_msg = data_json_obj['time_stamp'] + data_json_obj['message']
-					#
-					# if key.verify_signature(data_json_obj['pub_key'], data_json_obj['signature'],
-					#                                         verify_msg) is True:
-					#     log.write("Transaction is valid")
-					#     tx = Transaction().from_json(data_json_obj)
-					#     transaction.add_transaction(tx)
-					# else:
-					#     log.write("Transaction is invalid")
+					if key.verify_signature(data_json_obj['pub_key'], data_json_obj['signature'],
+					                        verify_msg) is True:
+						log.write("Transaction is valid")
+						tx = Transaction().from_json(data_json_obj)
+						transaction.add_transaction(tx)
+					else:
+						log.write("Transaction is invalid")
 
 				# 블록을 수신한 경우
 				elif data_json_obj['type'] == 'B':
